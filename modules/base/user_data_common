@@ -1,0 +1,38 @@
+#!/bin/bash -xe
+
+sudo dnf update -y
+sudo dnf install -y iproute net-tools sysstat ethtool bcc-tools bpftrace iperf3
+
+sudo dnf install -y python3-pip
+pip3 install dnslib cachetools
+
+sudo dnf install -y amazon-cloudwatch-agent
+
+mkdir -p /opt/aws/amazon-cloudwatch-agent/etc
+cat > /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json << EOF
+{
+  "agent" : {
+    "debug": true,
+    "logfile": "/opt/aws/amazon-cloudwatch-agent/logs/amazon-cloudwatch-agent.log"
+  },
+  "metrics": {
+    "metrics_collected": {
+      "ethtool": {
+        "metrics_include": [
+          "bw_in_allowance_exceeded",
+          "bw_out_allowance_exceeded",
+          "conntrack_allowance_exceeded", 
+          "linklocal_allowance_exceeded",
+          "pps_allowance_exceeded"
+        ]
+      }
+    }
+  }
+}
+EOF
+
+sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a append-config -m ec2 -s -c file:/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
+sudo systemctl enable amazon-cloudwatch-agent
+sudo systemctl restart amazon-cloudwatch-agent
+
+echo "export PATH=$PATH:/usr/share/bcc/tools" >> /etc/bashrc

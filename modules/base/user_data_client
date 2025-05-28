@@ -1,0 +1,2 @@
+# Client-specific setup
+echo "export PS1='[\\u@client]# '" >> /etc/bashrc
